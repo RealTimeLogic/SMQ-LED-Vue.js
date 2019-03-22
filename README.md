@@ -4,7 +4,7 @@ This example shows how to use modern web frameworks such as Vue.js with a non No
 
 The example proposes the use of two application servers during development process. The released application can be stored as static assets on any web server and does not need Node.js, thus Node.js is only used during development.
 
-A more in-depth introduction to the concept proposed in this example can be found in the article: [using modern frameworks with the Barracuda App Server](https://realtimelogic.com/articles/ReactJS-Angular-and-Vuejs-with-the-Barracuda-App-Server).
+A more in-depth introduction to the concept proposed in this example can be found in the article: [using modern frameworks with the any web server](https://realtimelogic.com/articles/ReactJS-Angular-and-Vuejs-with-the-Barracuda-App-Server).
 
 This example is designed for using the [SMQ IoT protocol](https://realtimelogic.com/products/simplemq/src/). The SMQ protocol can be used for browser to server communication; however, this example does not use SMQ for communicating with the server, but uses SMQ for communicating with devices. You do not need a device for running the example, but you need to download the [SMQ LED C Example](https://github.com/RealTimeLogic/SMQ) separately and compile this example if you intend to test the code in release mode. The example connects to the online SMQ broker when run in developer mode and you only need Node.js when testing the code in developer mode.
 
@@ -32,7 +32,7 @@ The above commands, downloads the example using git, changes to the example dire
 
 You can now navigate to your local Node.js server by navigating to: http://localhost:8080.
 
-The Vue.js LED SPA example replicates the functionality in the JQuery powered SPA found at: [simplemq.com/m2m-led/](https://simplemq.com/m2m-led/). You can see how the JQuery SPA and Vua.js SPA are synchronized by opening two browser windows, one for http://localhost:8080, and one for simplemq.com/m2m-led/. Notice how the two application's internal states are synchronized when clicking a button in any of the browser windows.
+The Vue.js LED SPA example replicates the functionality in the JQuery powered SPA found at: [simplemq.com/m2m-led/](https://simplemq.com/m2m-led/). You can see how the JQuery SPA and Vue.js SPA are synchronized by opening two browser windows, one for http://localhost:8080, and one for simplemq.com/m2m-led/. Notice how the two application's internal states are synchronized when clicking a button in any of the browser windows.
 
 ## Package example for release (production) mode:
 
@@ -40,7 +40,7 @@ Enter Ctrl-C in the command window running the Node.js server. Enter the followi
 ```
 npm run build
 ```
-The production ready Vua.js SPA code is put in the 'dist' sub directory.
+The production ready Vue.js SPA code is put in the 'dist' sub directory.
 
 You may now run a local Barracuda App Server and load the LED SPA example using the Barracuda App Server. We also need to install the server side LED example code. Install the LED server side example code as follows:
 
@@ -63,7 +63,7 @@ The above command instructs the Mako Server to use the 'dist' directory as the s
 
 Pay attention to the port number used by the Mako Server (printed in the console) . The port number will most likely be 9357. Navigate to the http://localhost:portno (http://localhost:9357) to open the released Vue.js LED example.
 
-You should see a spinning icon. This is a small glitch in the Vua.js SPA. It basically means that you have no devices connected to your local computer. Connect a device as follows:
+You should see a spinning icon. This is a small glitch in the Vue.js SPA. It basically means that you have no devices connected to your local computer. Connect a device as follows:
 
 ```
 git clone https://github.com/RealTimeLogic/SMQ.git
@@ -72,4 +72,74 @@ make
 ./led-smq -blocalhost:9357/smq.lsp
 ```
 
+# How the Example Works
+
+The example implements the same features as the JQuery powered JavaScript application. See the tutorial [Browser to Device LED Control using SMQ](https://makoserver.net/articles/Browser-to-Device-LED-Control-using-SimpleMQ) for information on the SMQ pub/sub messages used in this example.
+
+The example's core can be found in src/components/SMQ-LED.vue. Open this file and scroll down to line 270. You should see the following code:
+
+```javascript
+const deployd = process.env.NODE_ENV == "production";
+let script = document.createElement('script');
+script.src = deployd ? "/rtl/smq.js" : "https://simplemq.com/rtl/smq.js";
+document.head.append(script);
+```
+
+Vue.js tells us if the code is in developer mode or in production mode. As you can see from the above code, we load the SMQ JavaScript library from the online server simplemq.com if the code is in developer mode and from the origin server if the code is in production (release) mode. You may change the developer mode URL if you have a copy of the Mako Server running on your own computer.
+
+We also need to specify the WebSocket connection end point when creating an SMQ JavaScript instance.
+
+```javascript
+window.smq = SMQ.Client(deployd ? SMQ.wsURL("/smq.lsp") : "wss://simplemq.com/smq.lsp");
+```
+
+The above code snippet sets the SMQ WebSocket URL to simplemq.com if the code is in developer mode and to the origin server if the code is in production mode.
+
+## Layout
+
+There are two main directories, namely 'src' and 'static'.
+
+The 'src' directory contains three subdirectories: 'assets', 'components' and 'router', and two files 'app.vue' and 'main.js'.
+
+'main.js' contains the Vue instances which will run in the whole app.
+
+'app.vue' is like the basement of the whole component. In 'app.vue' the components are loaded dynamically though the router.
+
+The 'assests' directory contains all the CSS for SMQ-LED components. The 'components' consists of the 'SMQ-LED.vue' file.
+
+The 'router' directory contains the 'index.js' file. The 'index.js' file directs which router will load which component.
+
+All the audios and images that are used for SMQ-LED are stored in the 'static' directory.
+
+## Vue.js Info
+
+Every Vue.js component has three sections:
+i) Template
+ii) Script
+iii) Style
+
+**Template:**
+
+We used the Element UI kit for CSS and styling all components. This UI kit is based on the following: [https://element.eleme.io/](https://element.eleme.io/)
+
+Tabs(el-tabs) are used to show all the connected devices which previews its LEDs.
+
+```xml
+<el-tab-pane
+:key="conect.ptid"
+	v-for="conect in connection"
+	:name="connectionToString(conect.ptid)"
+	@tab-click="clickConnection"
+>
+//Preview will be shown here
+</el-tab-pane>
+
+//Preview will be shown here
+
+</el-tab-pane>
+```
+
+**Script:**
+
+When the app starts, the Vue.js "mounted" method is called and this function sets up the app and subscribes to the defined SMQ topics. See the code for details.
 
