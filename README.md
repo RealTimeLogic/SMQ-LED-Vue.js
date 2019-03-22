@@ -133,10 +133,6 @@ Tabs(el-tabs) are used to show all the connected devices which previews its LEDs
 >
 //Preview will be shown here
 </el-tab-pane>
-
-//Preview will be shown here
-
-</el-tab-pane>
 ```
 
 **Script:**
